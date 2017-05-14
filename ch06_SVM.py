@@ -138,3 +138,34 @@ print ws
 
 dataMat = [[5, 0]]
 print 'ANSWER:', dataMat[0] * mat(ws) + b
+
+
+def kernelTrans(X, A, kTup):
+    """将数据转换到一个高维空间"""
+    m, n = shape(X)
+    K = mat(zeros((m, 1)))
+    if kTup[0] == 'lin':
+        K = X * A.T
+    elif kTup[0] == 'rbf':
+        for j in range(m):
+            deltaRow = X[j, :] - A
+            K[j] = deltaRow * defchararray.T
+        K = exp(K / (-1 * kTup[1] ** 2))  # X ** 2 ：X的平方
+    else:
+        raise NameError('Hoston We Have a Problem That Kernel is not recognized.')
+    return K
+
+
+class optStruct:
+    def __init__(self, dataMatIn, classLabel, C, toler, kTup):  # 初始化构造函数
+        self.X = dataMatIn
+        self.labelMat = classLabel
+        self.C = C
+        self.tol = toler
+        self.m = shape(dataMatIn)[0]
+        self.alphas = mat(zeros((self.m, 1)))
+        self.b = 0
+        self.eCache = mat(zeros((self.m, 2)))
+        self.K = mat(zeros((self.m, self.m)))
+        for i in range(self.m):
+            self.K[:, i] = kernelTrans(self.X, self.X[i, :], kTup)
