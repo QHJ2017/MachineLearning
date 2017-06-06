@@ -4,6 +4,7 @@
 Created on Apr 30, 2017
 Chapter 6 source file for Machine Learing in Action
 @author: by Peter
+此文件是用简单SMO方法实现支持向量机的分类的。
 '''
 
 from numpy import *
@@ -169,3 +170,5 @@ class optStruct:
         self.K = mat(zeros((self.m, self.m)))
         for i in range(self.m):
             self.K[:, i] = kernelTrans(self.X, self.X[i, :], kTup)
+
+
