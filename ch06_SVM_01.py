@@ -13,6 +13,18 @@ from numpy import *
 # 读取点的坐标和标签
 # 注意标签使用的是1和-1
 def loadDataSet(fileName):
+    """
+    读取数据。
+    :return: 数据集，标签集。
+    数据读取举例：
+        0.0	5.0	1
+        5.0	0.0	1
+        5.0	5.0	1
+        1.0	0.0	-1
+        0.0	1.0	-1
+        0.0	0.0	-1
+
+    """
     dataMat = []
     labelMat = []
     fr = open(fileName)
@@ -31,15 +43,24 @@ dataArr, labelArr = loadDataSet('ch06_Data\\testSet_qiu3.txt')
 
 
 # i是alpha的下标，m是所有alpha的数目
-def selectJrand(i, m):
+def selectJrand(i, m):  # todo: 这个随机数是用来干什么的？
+    """
+    生成随机数，虽然现在还不知道具体是用来做什么的。
+    """
     j = i  # we want to select any J not equal to i
-    while (j == i):
-        j = int(random.uniform(0, m))
+    while j == i:
+        j = int(random.uniform(0, m))  # 生成随机数，并服从均匀分布。
     return j
 
 
-# 用于调整大于H或小于L的alpha值
 def clipAlpha(aj, H, L):
+    """
+    用于调整alpha使其：L < alpha < H。
+    :param aj: 也就是alpha。
+    :param H: 最大值。
+    :param L: 最小值。
+    :return: aj。
+    """
     if aj > H:
         aj = H
     if L > aj:
@@ -48,14 +69,22 @@ def clipAlpha(aj, H, L):
 
 
 def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
+    """
+    简化版SMO序列最小优化算法。
+    :param dataMatIn: 数据集。
+    :param classLabels: 标签集。
+    :param C: 残差。
+    :param toler:
+    :param maxIter:
+    :return: b值，a1, a2, a3...
+    """
     dataMatrix = mat(dataMatIn)
     labelMat = mat(classLabels).transpose()  # 转置为列向量
-    # print 'labelMat:', labelMat
     b = 0
     m, n = shape(dataMatrix)  # m行，n列
     alphas = mat(zeros((m, 1)))
     iter = 0
-    while (iter < maxIter):
+    while iter < maxIter:
         alphaPairsChanged = 0  # pair 一对，成双的
         for i in range(m):
             fXi = float(multiply(alphas, labelMat).T * (dataMatrix * dataMatrix[i, :].T)) + b
@@ -63,13 +92,15 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
             # print 'dataMatrix:', dataMatrix
             Ei = fXi - float(labelMat[i])  # if checks if an example violates KKT conditions
             if ((labelMat[i] * Ei < -toler) and (alphas[i] < C)) or ((labelMat[i] * Ei > toler) and (alphas[i] > 0)):
-                # 如果alpha可以更改，进入优化程序
+                '''
+                判断是否满足KKT条件，如果不满足，说明不是最优的，可以继续优化。
+                '''
                 j = selectJrand(i, m)
                 fXj = float(multiply(alphas, labelMat).T * (dataMatrix * dataMatrix[j, :].T)) + b
                 Ej = fXj - float(labelMat[j])
                 alphaIold = alphas[i].copy()
                 alphaJold = alphas[j].copy()
-                if (labelMat[i] != labelMat[j]):
+                if labelMat[i] != labelMat[j]:
                     L = max(0, alphas[j] - alphas[i])
                     H = min(C, C + alphas[j] - alphas[i])
                 else:
@@ -78,8 +109,8 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
                 if L == H:
                     # print "L==H"
                     continue
-                eta = 2.0 * dataMatrix[i, :] * dataMatrix[j, :].T - dataMatrix[i, :] * dataMatrix[i, :].T - \
-                      dataMatrix[j, :] * dataMatrix[j, :].T
+                eta = 2.0 * dataMatrix[i, :] * dataMatrix[j, :].T - dataMatrix[i, :] * dataMatrix[i, :].T \
+                      - dataMatrix[j, :] * dataMatrix[j, :].T
                 if eta >= 0:
                     # print "eta>=0"
                     continue
@@ -100,7 +131,7 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
                     b = (b1 + b2) / 2.0
                 alphaPairsChanged += 1
                 # print "iter: %d i:%d, pairs changed %d" % (iter, i, alphaPairsChanged)
-        if (alphaPairsChanged == 0):
+        if alphaPairsChanged == 0:
             iter += 1
         else:
             iter = 0
@@ -113,8 +144,14 @@ alpha对应大部分都是0值，而非0值所对应的就是支持向量
 '''
 
 
-# 此函数所返回的，就是 WT*X + b 中的WT
 def calcWs(alphas, dataArr, classLabels):
+    """
+    此函数用于计算 WT*X + b 中的 WT。
+    :param alphas: 用SMO算法算出的a1, a2, a3...
+    :param dataArr: 数据集。
+    :param classLabels: 标签集。
+    :return:  WT*X + b 中的 WT。
+    """
     X = mat(dataArr)
     labelMat = mat(classLabels).transpose()
     m, n = shape(X)
@@ -170,5 +207,3 @@ class optStruct:
         self.K = mat(zeros((self.m, self.m)))
         for i in range(self.m):
             self.K[:, i] = kernelTrans(self.X, self.X[i, :], kTup)
-
-
